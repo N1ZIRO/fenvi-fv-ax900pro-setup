@@ -61,7 +61,7 @@ Un reinicio NORMAL no arregla esto (el PCIe sigue con energía del standby).
 ## Punto de acceso (Hotspot) — SOLUCIONADO DE VERDAD (17-sep-2026, confirmado con celular)
 Estado HOY: el hotspot FUNCIONA. El celular (OnePlus 10T 5G) se conectó, obtuvo
 IP por DHCP y navegó (hubo tráfico real en el NAT). SSID `cachyos-x8664`, clave
-`12345678`, WPA2, en **5 GHz canal 36** (configurado así a petición del usuario;
+(la definida en /etc/hostapd/hostapd.conf), WPA2, en **5 GHz canal 36** (configurado así a petición del usuario;
 para volver a 2.4 GHz cambiar en /etc/hostapd/hostapd.conf `hw_mode=g` y
 `channel=6`), compartiendo internet desde eno1 (cable).
 - Nota: en el celular no se puede forzar banda 2.4/5G; la banda se elige AQUÍ en
@@ -75,7 +75,7 @@ para volver a 2.4 GHz cambiar en /etc/hostapd/hostapd.conf `hw_mode=g` y
 
 ### Cómo está montado (para tocar o revertir)
 - AP: /etc/hostapd/hostapd.conf -> ssid cachyos-x8664 / hw_mode=a / channel=36
-  (5 GHz) / WPA2 (clave 12345678). Para 2.4 GHz: hw_mode=g y channel=6.
+  (5 GHz) / WPA2 (clave en hostapd.conf). Para 2.4 GHz: hw_mode=g y channel=6.
 - DHCP/DNS: dnsmasq (/etc/dnsmasq.d/wlan0-hotspot.conf), IP del AP 10.42.0.1/24
   (drop-in en dnsmasq.service.d/10-hotspot-ip.conf repone la IP al arrancar).
 - NAT: /etc/ufw/before.rules -> `-A POSTROUTING -s 10.42.0.0/24 -o eno1 -j MASQUERADE`
@@ -94,7 +94,7 @@ para volver a 2.4 GHz cambiar en /etc/hostapd/hostapd.conf `hw_mode=g` y
 2. Encender el hotspot:
    - `sudo nmcli radio wifi off`
    - `sudo systemctl start hostapd dnsmasq`
-   - El celular se conecta a cachyos-x8664 / 12345678 (5 GHz). Internet sale por
+   - El celular se conecta al SSID de hostapd.conf (5 GHz). Internet sale por
      el cable eno1. NO arrancar hostapd con el wifi del PC conectado (conflicto).
 3. Apagar el hotspot:
    - `sudo systemctl stop hostapd dnsmasq`
