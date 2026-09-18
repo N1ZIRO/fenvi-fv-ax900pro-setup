@@ -293,22 +293,30 @@ if need nmcli; then
   echo "  NetworkManager: dispositivos bluetooth marcados como no gestionados (sin fila 'Bluetooth' en GNOME)."
 fi
 
-if need bluetoothctl; then
+if need btmgmt; then
   $RUN tee /usr/local/sbin/aic-bt-class-laptop >/dev/null <<'SCRIPT'
 #!/usr/bin/env bash
-sleep 5
-for c in $(/usr/bin/bluetoothctl list | awk '{print $2}'); do
-  /usr/bin/bluetoothctl select "$c" >/dev/null 2>&1
-  /usr/bin/bluetoothctl mgmt.class 1 12
+sleep 6
+for i in $(btmgmt info 2>/dev/null | sed -n "s/^hci\([0-9][0-9]*\).*/\1/p"); do
+  btmgmt -i "$i" class 1 12 || true
 done
 SCRIPT
   $RUN chmod +x /usr/local/sbin/aic-bt-class-laptop
   $RUN mkdir -p /etc/systemd/system/bluetooth.service.d
   printf '[Service]\nExecStartPost=/usr/local/sbin/aic-bt-class-laptop\n' |
     $RUN tee /etc/systemd/system/bluetooth.service.d/bt-class-laptop.conf >/dev/null
+  $RUN sed -i 's/^#\?Class = .*/Class = 0x00010c/' /etc/bluetooth/main.conf
   $RUN systemctl daemon-reload
   $RUN systemctl restart bluetooth 2>/dev/null || true
-  echo "  Clase Bluetooth fijada a Laptop en todos los adaptadores: el telefono mostrara una PC."
+  echo "  Clase Bluetooth fijada a Laptop (el telefono mostrara una PC, no un auto)."
+fi
+
+if need btmgmt && $RUN test -d /usr/share/wireplumber; then
+  $RUN mkdir -p /etc/wireplumber/wireplumber.conf.d
+  printf 'monitor.bluez.properties = {\n  bluez5.roles = [ a2dp_sink a2dp_source ]\n}\n' |
+    $RUN tee /etc/wireplumber/wireplumber.conf.d/50-no-hfp.conf >/dev/null
+  echo "  HandsFree/ManosLibres desactivado (B0 solo audio A2DP: tu PC ya no parece un auto en el telefono)."
+  echo "  Aplica con: systemctl --user restart wireplumber  (o reinicia la sesion)"
 fi
 
 say "Resumen"
