@@ -277,6 +277,28 @@ fi
 # El hotspot NO arranca al boot (uso manual con hotspot-on / hotspot-off)
 $RUN systemctl disable --now hostapd dnsmasq >/dev/null 2>&1 || true
 
+say "Bluetooth: desactivando tethering PAN/NAP (no soportado por el chip AIC8800D80)"
+if need nmcli; then
+  echo "  Eliminando conexiones de tipo bluetooth (ej. 'bluetooth' / nombre del telefono)..."
+  while IFS=: read -r cname ctype; do
+    if [[ "$ctype" == "bluetooth" ]]; then
+      echo "    conexion borrada: $cname"
+      $RUN nmcli connection delete "$cname" >/dev/null 2>&1 || true
+    fi
+  done < <(nmcli -t -f NAME,TYPE connection show 2>/dev/null)
+  $RUN mkdir -p /etc/NetworkManager/conf.d
+  printf '[device]\nunmanaged-devices=type:bluetooth\n' |
+    $RUN tee /etc/NetworkManager/conf.d/50-no-bluetooth-tether.conf >/dev/null
+  $RUN systemctl reload NetworkManager 2>/dev/null || true
+  echo "  NetworkManager: dispositivos bluetooth marcados como no gestionados."
+fi
+
+if $RUN test -f /etc/bluetooth/main.conf; then
+  $RUN sed -i 's/^#\?Class = 0x0*[0-9a-fA-F]*/Class = 0x000130/' /etc/bluetooth/main.conf
+  $RUN systemctl restart bluetooth 2>/dev/null || true
+  echo "  Clase Bluetooth fijada a Laptop (0x000130): el telefono mostrara una PC."
+fi
+
 say "Resumen"
 HOTSPOT_CONF=/etc/hostapd/hostapd.conf
 if $RUN test -f "$HOTSPOT_CONF"; then
