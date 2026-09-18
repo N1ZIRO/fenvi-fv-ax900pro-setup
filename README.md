@@ -1,12 +1,13 @@
-# Fenvi FV-AX900Pro setup (chip AIC8800D80) — Arch/CachyOS
+# Fenvi FV-AX900Pro setup (chip AIC8800D80) — Arch/CachyOS, Debian/Ubuntu, Fedora
 
 Script y documentación para que la tarjeta **Fenvi FV-AX900Pro** (controlador PCIe
 `AIC Semiconductor [a69c:8d80]`, mismo chip que la Ugreen CM958) funcione de una
-tras un formateo/respaldo en **Arch Linux / CachyOS**:
+tras un formateo/respaldo en **Arch Linux / CachyOS**, **Debian/Ubuntu** y **Fedora**
+(la distro se detecta sola):
 
 - **WiFi PCIe** (wlan0) con driver DKMS `aic8800D80_fdrv` + firmware del fabricante.
 - **Bluetooth** integrado en la misma tarjeta con el módulo `aic_btusb`.
-- **Punto de acceso (hotspot)** en 5 GHz (hostapd + dnsmasq + NAT con UFW).
+- **Punto de acceso (hotspot)** en 5 GHz (hostapd + dnsmasq + NAT con UFW o firewalld).
 
 ## ¿Por qué existen los parches y qué pasó con "kernel 6" vs "kernel 7"?
 
@@ -27,10 +28,11 @@ siempre que tengas instalados los headers correspondientes (`linux-cachyos-heade
 ```
 .
 ├── setup.sh          # Instalador completo (driver + hotspot), listo para ejecutar
-├── driver/           # Paquete AUR aic8800d80-pcie-dkms 6.4.3.0-5
-│   ├── PKGBUILD        # Recompilar desde el zip del fabricante (para kernels futuros)
+├── driver/           # Driver 6.4.3.0
+│   ├── PKGBUILD        # Paquete AUR aic8800d80-pcie-dkms (Arch)
 │   ├── *.patch         # Parches de compatibilidad 6.13+/7.1+/7.2+ y BT
-│   └── *.pkg.tar.zst   # Paquete ya compilado (fallback sin AUR ni macro pak)
+│   ├── *.pkg.tar.zst   # Paquete Arch ya compilado (fallback sin AUR ni macro pak)
+│   └── UGREEN-*.zip    # Código fuente del fabricante (compila DKMS en Debian/Ubuntu/Fedora)
 ├── hotspot/          # Configuración del punto de acceso
 │   ├── hostapd.conf                # AP con SSID/contraseña (WPA2, 5 GHz)
 │   ├── dnsmasq-wlan0-hotspot.conf  # DHCP/DNS del AP
@@ -43,7 +45,12 @@ siempre que tengas instalados los headers correspondientes (`linux-cachyos-heade
 ## Instalación en un solo comando
 
 Solo copia, pega y Enter. Clona a `/tmp`, ejecuta el instalador y se limpia solo
-(pedirá `sudo` y no hace falta descargar nada a mano):
+(pedirá `sudo` y no hace falta descargar nada a mano). Detecta la distro sola:
+
+- **Arch/CachyOS** → usa el paquete AUR `aic8800d80-pcie-dkms` (si no hay paru/yay,
+  instala el `.pkg.tar.zst` incluido).
+- **Debian/Ubuntu/Fedora** → compila desde el código del fabricante (zip incluido)
+  vía DKMS con los parches de compatibilidad.
 
 ```bash
 git clone https://github.com/N1ZIRO/fenvi-fv-ax900pro-setup /tmp/fenvi-fv-ax900pro-setup && cd /tmp/fenvi-fv-ax900pro-setup && bash setup.sh && cd ~ && rm -rf /tmp/fenvi-fv-ax900pro-setup
@@ -82,10 +89,15 @@ hotspot-off  # vuelve a NetworkManager
 
 ### Notas
 
-- El driver se instala **desde AUR** (`aic8800d80-pcie-dkms`) si tienes paru/yay;
-  si no, se instala el `.pkg.tar.zst` incluido. Con DKMS, los parches quedan en
-  `/usr/src/aic8800-6.4.3.0/` y los rebuilt de kernel nuevos son automáticos.
-- Si en un futuro un kernel rompe la compilación, recompila con:
+- **Arch/CachyOS**: el driver se instala **desde AUR** (`aic8800d80-pcie-dkms`) si
+  tienes paru/yay; si no, se instala el `.pkg.tar.zst` incluido.
+- **Debian/Ubuntu/Fedora**: el script desempaqueta el zip del fabricante, aplica los
+  parches y compila/instala el módulo con DKMS (necesita `clang/llvm`, se instala solo).
+- Con DKMS, los parches quedan en `/usr/src/aic8800-6.4.3.0/` y los rebuilt de
+  kernel nuevos son automáticos (con los headers instalados).
+- En Fedora el NAT del hotspot usa **firewalld** (wlan0 en zona `internal` con
+  masquerade); en Debian/Ubuntu/Arch usa **UFW**.
+- Si en un futuro un kernel rompe la compilación entre los parches, recompila con:
   ```bash
   cd driver && makepkg -sf --nodeps  # requiere el zip del fabricante (incluido aquí) + base-devel
   sudo pacman -U aic8800d80-pcie-dkms-*.pkg.tar.zst
