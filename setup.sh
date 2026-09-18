@@ -287,16 +287,19 @@ if need nmcli; then
     fi
   done < <(nmcli -t -f NAME,TYPE connection show 2>/dev/null)
   $RUN mkdir -p /etc/NetworkManager/conf.d
-  printf '[device]\nunmanaged-devices=type:bluetooth\n' |
+  printf '[keyfile]\nunmanaged-devices=type:bt\n' |
     $RUN tee /etc/NetworkManager/conf.d/50-no-bluetooth-tether.conf >/dev/null
-  $RUN systemctl reload NetworkManager 2>/dev/null || true
-  echo "  NetworkManager: dispositivos bluetooth marcados como no gestionados."
+  $RUN systemctl restart NetworkManager 2>/dev/null || $RUN systemctl reload NetworkManager 2>/dev/null || true
+  echo "  NetworkManager: dispositivos bluetooth marcados como no gestionados (sin fila 'Bluetooth' en GNOME)."
 fi
 
-if $RUN test -f /etc/bluetooth/main.conf; then
-  $RUN sed -i 's/^#\?Class = 0x0*[0-9a-fA-F]*/Class = 0x000130/' /etc/bluetooth/main.conf
+if need bluetoothctl; then
+  $RUN mkdir -p /etc/systemd/system/bluetooth.service.d
+  printf '[Service]\nExecStartPost=/bin/sh -c '\''sleep 5; /usr/bin/bluetoothctl mgmt.class 1 12'\''\n' |
+    $RUN tee /etc/systemd/system/bluetooth.service.d/bt-class-laptop.conf >/dev/null
+  $RUN systemctl daemon-reload
   $RUN systemctl restart bluetooth 2>/dev/null || true
-  echo "  Clase Bluetooth fijada a Laptop (0x000130): el telefono mostrara una PC."
+  echo "  Clase Bluetooth fijada a Laptop en cada arranque del daemon: el telefono mostrara una PC."
 fi
 
 say "Resumen"
