@@ -106,3 +106,34 @@ hotspot-off  # vuelve a NetworkManager
   "AIC Semiconductor" sin nombre comercial.
 - Lee `docs/wifi-fenvi-estado.md` para entender cómo se resolvieron los problemas
   (DMA del chip, firmware `g586bc1e8`, UFW bloqueando el DHCP del hotspot, etc.).
+
+## Bluetooth: sin tethering de datos y clasificación correcta en el celular
+
+El chip AIC8800D80 es Bluetooth 5.4, pero su firmware **no soporta tethering
+PAN/NAP** (pasarle Internet a la PC por Bluetooth). Si en el celular activas
+"Compartir conexión por Bluetooth" contra esta PC, el sistema intenta crear una
+conexión de datos por Bluetooth que no funciona de forma fiable. El instalador
+deja el dispositivo Bluetooth como **no gestionado** por NetworkManager y fija la
+**clase Laptop**:
+
+- Desgestiona el Bluetooth de NetworkManager → en GNOME/Red ya no aparece una fila
+  "Bluetooth" con opción de recibir Internet (`/etc/NetworkManager/conf.d/50-no-bluetooth-tether.conf`).
+- Elimina conexiones de tipo `bluetooth` que NetworkManager recrea al emparejar
+  un teléfono (`nmcli connection delete`).
+- Fija la clase de dispositivo a **Computer/Laptop** en cada arranque de
+  `bluetooth.service` (`btmgmt class 1 12` vía drop-in de systemd + `Class = 0x00010c`
+  en `/etc/bluetooth/main.conf`).
+- Desactiva el perfil **Hands-Free (HFP)** en WirePlumber (solo roles
+  `a2dp_sink a2dp_source`), porque el conjunto de perfiles HFP+Phonebook+Mensajes+Audio
+  hace que algunos teléfonos (p. ej. OnePlus/ColorOS) muestren la PC con **icono de
+  "auto"** (manos libres de vehículo). El audio A2DP/aptX HD sigue funcionando.
+
+Notas:
+
+- Si pese a todo el celular sigue mostrando la PC con icono de auto, es una
+  heurística/caché del propio teléfono (olvida y vuelve a emparejar). No afecta el
+  funcionamiento de la tarjeta.
+- Para revertir esta parte: borra `/etc/NetworkManager/conf.d/50-no-bluetooth-tether.conf`,
+  `/etc/systemd/system/bluetooth.service.d/bt-class-laptop.conf` y
+  `/etc/wireplumber/wireplumber.conf.d/50-no-hfp.conf`, y restaura
+  `Class` en `/etc/bluetooth/main.conf`.
