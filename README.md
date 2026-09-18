@@ -49,6 +49,9 @@ Solo copia, pega y Enter. Clona a `/tmp`, ejecuta el instalador y se limpia solo
 git clone https://github.com/N1ZIRO/fenvi-fv-ax900pro-setup /tmp/fenvi-fv-ax900pro-setup && cd /tmp/fenvi-fv-ax900pro-setup && bash setup.sh && cd ~ && rm -rf /tmp/fenvi-fv-ax900pro-setup
 ```
 
+> **Importante:** si ya existe `/etc/hostapd/hostapd.conf`, el instalador lo conserva
+> tal cual: **no cambia la contraseña ni el SSID** que ya tenga la máquina.
+
 Con tu propia contraseña para el hotspot (evita el aviso de la clave por defecto `12345678`):
 
 ```bash

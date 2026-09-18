@@ -97,10 +97,14 @@ else
 fi
 
 say "Configurando punto de acceso (hostapd + dnsmasq + ufw + sysctl)"
-$RUN sed "s/^wpa_passphrase=.*/wpa_passphrase=${AP_PASS}/; s/^ssid=.*/ssid=${AP_SSID}/" \
-  "$HOTSPOT_DIR/hostapd.conf" > /tmp/.hostapd.conf.$$
-$RUN install -Dm600 -o root -g root /tmp/.hostapd.conf.$$ /etc/hostapd/hostapd.conf
-rm -f /tmp/.hostapd.conf.$$
+if $RUN test -f /etc/hostapd/hostapd.conf; then
+  echo "  /etc/hostapd/hostapd.conf ya existe: se conserva su SSID y contraseña actuales."
+else
+  $RUN sed "s/^wpa_passphrase=.*/wpa_passphrase=${AP_PASS}/; s/^ssid=.*/ssid=${AP_SSID}/" \
+    "$HOTSPOT_DIR/hostapd.conf" > /tmp/.hostapd.conf.$$
+  $RUN install -Dm600 -o root -g root /tmp/.hostapd.conf.$$ /etc/hostapd/hostapd.conf
+  rm -f /tmp/.hostapd.conf.$$
+fi
 $RUN install -Dm644 "$HOTSPOT_DIR/dnsmasq-wlan0-hotspot.conf" /etc/dnsmasq.d/wlan0-hotspot.conf
 $RUN mkdir -p /etc/systemd/system/dnsmasq.service.d
 $RUN install -Dm644 "$HOTSPOT_DIR/dnsmasq-10-hotspot-ip.conf" /etc/systemd/system/dnsmasq.service.d/10-hotspot-ip.conf
@@ -125,15 +129,23 @@ fi
 $RUN systemctl disable --now hostapd dnsmasq >/dev/null 2>&1 || true
 
 say "Resumen"
+HOTSPOT_CONF=/etc/hostapd/hostapd.conf
+if $RUN test -f "$HOTSPOT_CONF"; then
+  CUR_SSID=$($RUN sed -n 's/^ssid=//p' "$HOTSPOT_CONF")
+  CUR_PASS=$($RUN sed -n 's/^wpa_passphrase=//p' "$HOTSPOT_CONF")
+else
+  CUR_SSID="$AP_SSID"
+  CUR_PASS="$AP_PASS"
+fi
 echo "  WiFi/Bluetooth:  driver DKMS aic8800/6.4.3.0 para kernel $(uname -r)"
 echo "  Red del PC:      gestionada por NetworkManager (conecta tu red como siempre)"
 echo "  Hotspot:         manual -> 'hotspot-on' / 'hotspot-off'"
-echo "  Hotspot SSID:    $AP_SSID  |  canal 36 (5 GHz); para 2.4 GHz edita /etc/hostapd/hostapd.conf (hw_mode=g, channel=6)"
+echo "  Hotspot SSID:    ${CUR_SSID:-$AP_SSID}  |  canal 36 (5 GHz); para 2.4 GHz edita /etc/hostapd/hostapd.conf (hw_mode=g, channel=6)"
 echo
 echo "  Verifica el wifi:  nmcli device status"
 echo "  Verifica BT:       bluetoothctl show   (o rfkill list)"
 
-if [[ "$AP_PASS" == "12345678" ]]; then
+if [[ "$CUR_PASS" == "12345678" ]]; then
   echo
   echo "  [AVISO] Sigue usando la clave por defecto 12345678. Recomendado:"
   echo "  edita /etc/hostapd/hostapd.conf y cambia wpa_passphrase."
