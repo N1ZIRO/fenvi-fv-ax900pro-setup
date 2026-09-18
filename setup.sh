@@ -294,12 +294,21 @@ if need nmcli; then
 fi
 
 if need bluetoothctl; then
+  $RUN tee /usr/local/sbin/aic-bt-class-laptop >/dev/null <<'SCRIPT'
+#!/usr/bin/env bash
+sleep 5
+for c in $(/usr/bin/bluetoothctl list | awk '{print $2}'); do
+  /usr/bin/bluetoothctl select "$c" >/dev/null 2>&1
+  /usr/bin/bluetoothctl mgmt.class 1 12
+done
+SCRIPT
+  $RUN chmod +x /usr/local/sbin/aic-bt-class-laptop
   $RUN mkdir -p /etc/systemd/system/bluetooth.service.d
-  printf '[Service]\nExecStartPost=/bin/sh -c '\''sleep 5; /usr/bin/bluetoothctl mgmt.class 1 12'\''\n' |
+  printf '[Service]\nExecStartPost=/usr/local/sbin/aic-bt-class-laptop\n' |
     $RUN tee /etc/systemd/system/bluetooth.service.d/bt-class-laptop.conf >/dev/null
   $RUN systemctl daemon-reload
   $RUN systemctl restart bluetooth 2>/dev/null || true
-  echo "  Clase Bluetooth fijada a Laptop en cada arranque del daemon: el telefono mostrara una PC."
+  echo "  Clase Bluetooth fijada a Laptop en todos los adaptadores: el telefono mostrara una PC."
 fi
 
 say "Resumen"
