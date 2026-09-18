@@ -40,13 +40,30 @@ siempre que tengas instalados los headers correspondientes (`linux-cachyos-heade
 └── docs/wifi-fenvi-estado.md     # Bitácora completa del trabajo (hardware, diagnósticos, causas raíz)
 ```
 
-## Uso tras formatear
+## Instalación en un solo comando
 
-Requisito mínimo para ejecutar `setup.sh`: red/dispositivo para instalar deps
-(base-devel, dkms, headers, hostapd, dnsmasq) — p. ej. el cable ethernet.
+Solo copia, pega y Enter. Clona a `/tmp`, ejecuta el instalador y se limpia solo
+(pedirá `sudo` y no hace falta descargar nada a mano):
 
 ```bash
-git clone https://github.com/<TU_USUARIO>/fenvi-fv-ax900pro-setup.git
+git clone https://github.com/N1ZIRO/fenvi-fv-ax900pro-setup /tmp/fenvi-fv-ax900pro-setup && cd /tmp/fenvi-fv-ax900pro-setup && bash setup.sh && cd ~ && rm -rf /tmp/fenvi-fv-ax900pro-setup
+```
+
+Con tu propia contraseña para el hotspot (evita el aviso de la clave por defecto `12345678`):
+
+```bash
+git clone https://github.com/N1ZIRO/fenvi-fv-ax900pro-setup /tmp/fenvi-fv-ax900pro-setup && cd /tmp/fenvi-fv-ax900pro-setup && AP_PASS="TuClaveSegura" bash setup.sh && cd ~ && rm -rf /tmp/fenvi-fv-ax900pro-setup
+```
+
+Requisito: red/dispositivo para instalar deps (base-devel, dkms, headers, hostapd,
+dnsmasq) — p. ej. el cable ethernet.
+
+## Uso tras formatear
+
+Instalación manual (equivalente al comando de arriba):
+
+```bash
+git clone https://github.com/N1ZIRO/fenvi-fv-ax900pro-setup.git
 cd fenvi-fv-ax900pro-setup
 
 # Instalación con la password del hotspot que quieras
