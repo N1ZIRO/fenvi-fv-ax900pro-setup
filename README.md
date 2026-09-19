@@ -127,6 +127,14 @@ deja el dispositivo Bluetooth como **no gestionado** por NetworkManager y fija l
   `a2dp_sink a2dp_source`), porque el conjunto de perfiles HFP+Phonebook+Mensajes+Audio
   hace que algunos teléfonos (p. ej. OnePlus/ColorOS) muestren la PC con **icono de
   "auto"** (manos libres de vehículo). El audio A2DP/aptX HD sigue funcionando.
+- **Ojo: "Restablecer ajustes de red" del celular NO borra la caché de Bluetooth.**
+  En OnePlus 10T 5G (OxygenOS 13/14), el icono de "auto" queda cachéado bajo la MAC
+  del PC (`F0:12:04:61:BB:01`) y por eso sigue saliendo aunque ya se haya
+  desactivado HFP y la clase sea `Laptop`. Hay que hacer:
+   1. Bluetooth → "PC Luis" → ⓘ → **Olvidar**.
+   2. Ajustes → **Aplicaciones** → ⋮ → **Mostrar sistema** → **Bluetooth** →
+      **Almacenamiento** → **Limpiar caché** (también en "BluetoothMIDI" si existe).
+   3. Reiniciar, y volver a **emparejar de cero**. Ese segundo ciclo limpia el icono.
 
 Notas:
 
